@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "variables": [
+    {
+      "id": "x",
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null,
+      "sets": []
+    },
+    {
+      "id": "y",
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null,
+      "sets": []
+    }
+  ],
+  "objective": {
+    "id": "profit",
+    "sense": "max",
+    "expr": {
+      "kind": "add",
+      "args": [
+        {
+          "kind": "mul",
+          "left": {
+            "kind": "number",
+            "value": 3
+          },
+          "right": {
+            "kind": "var",
+            "id": "x",
+            "indices": []
+          }
+        },
+        {
+          "kind": "mul",
+          "left": {
+            "kind": "number",
+            "value": 5
+          },
+          "right": {
+            "kind": "var",
+            "id": "y",
+            "indices": []
+          }
+        }
+      ]
+    }
+  },
+  "constraints": [
+    {
+      "id": "capacity_a",
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {
+            "kind": "mul",
+            "left": {
+              "kind": "number",
+              "value": 2
+            },
+            "right": {
+              "kind": "var",
+              "id": "x",
+              "indices": []
+            }
+          },
+          {
+            "kind": "var",
+            "id": "y",
+            "indices": []
+          }
+        ]
+      },
+      "sense": "le",
+      "rhs": {
+        "kind": "number",
+        "value": 4
+      }
+    },
+    {
+      "id": "capacity_b",
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {
+            "kind": "var",
+            "id": "x",
+            "indices": []
+          },
+          {
+            "kind": "mul",
+            "left": {
+              "kind": "number",
+              "value": 2
+            },
+            "right": {
+              "kind": "var",
+              "id": "y",
+              "indices": []
+            }
+          }
+        ]
+      },
+      "sense": "le",
+      "rhs": {
+        "kind": "number",
+        "value": 4
+      }
+    }
+  ]
+}

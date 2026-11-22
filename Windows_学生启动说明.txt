@@ -1,0 +1,21 @@
+ModelLab 数学规划建模平台 · 学生使用说明（Windows / Mac 通用）
+
+一、启动前准备
+1. 请先将整个压缩包完整解压到任意本地文件夹（不要在压缩包内直接双击运行）。
+2. 确保电脑已安装 Python 3.10~3.12（推荐 Anaconda / Spyder 或 python.org 官方版本）。
+3. 首次使用（Windows）：
+   - 先双击运行 `安装依赖.bat`，等待自动安装完成（包含 fastapi、uvicorn、highspy 等）。
+   - 如果你在 Mac 上使用，可在终端执行：`pip3 install -r requirements.txt`
+
+二、启动方法
+- Windows：双击 `start_windows.bat`，浏览器会自动打开 http://127.0.0.1:8000/ 。
+- Mac：双击 `start_mac.command`（或 `启动 ModelLab.command`）。
+- 通用（Spyder / PyCharm / VS Code）：
+  直接用 IDE 打开项目文件夹中的 `main.py` 并点击运行（Run / F5）。
+
+使用期间请保持黑色命令行窗口（或 IDE 控制台）运行；结束使用时关闭窗口或按 Ctrl+C（在 Spyder 中点红色停止按钮）。
+
+三、功能与求解器说明
+1. 内置求解器：平台自带开源 HiGHS 求解器，无需额外安装即可求解 LP / MILP 模型。
+2. 商业求解器（可选）：如果你的 Python / Anaconda 环境中已安装并激活了 `gurobipy`（Gurobi）或 `cplex`（CPLEX），平台会自动识别并允许在“03 生成与求解”中切换使用。
+3. 大模型辅助（可选）：进入左侧“模型设置”，选择 DeepSeek / 阿里云百炼 (Qwen) / OpenAI / 本机 Ollama 等服务商并填入自己的 API Key，即可使用 AI 生成模型草稿、模型诊断及结果图表解读。所有密钥与模型数据仅保存在你本机的 `.runtime/` 文件夹中。

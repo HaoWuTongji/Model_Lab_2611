@@ -1,0 +1,35 @@
+{
+  "variables": [
+    {
+      "id": "x",
+      "domain": "continuous",
+      "lower": null,
+      "upper": null,
+      "sets": []
+    }
+  ],
+  "objective": {
+    "id": "obj",
+    "sense": "min",
+    "expr": {
+      "kind": "var",
+      "id": "x",
+      "indices": []
+    }
+  },
+  "constraints": [
+    {
+      "id": "floor",
+      "lhs": {
+        "kind": "var",
+        "id": "x",
+        "indices": []
+      },
+      "sense": "ge",
+      "rhs": {
+        "kind": "number",
+        "value": -3
+      }
+    }
+  ]
+}

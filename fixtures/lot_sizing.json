@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "sets": [
+    {
+      "id": "T",
+      "members": ["T1", "T2", "T3", "T4"],
+      "description": "4 个计划生产周期"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "d",
+      "symbol": "d",
+      "description": "各周期客户需求量（件）",
+      "sets": ["T"],
+      "entries": [
+        {"indices": ["T1"], "value": 40},
+        {"indices": ["T2"], "value": 60},
+        {"indices": ["T3"], "value": 90},
+        {"indices": ["T4"], "value": 50}
+      ]
+    },
+    {
+      "id": "K",
+      "symbol": "K",
+      "description": "各周期开机生产固定准备成本（元）",
+      "sets": ["T"],
+      "entries": [
+        {"indices": ["T1"], "value": 500},
+        {"indices": ["T2"], "value": 500},
+        {"indices": ["T3"], "value": 500},
+        {"indices": ["T4"], "value": 500}
+      ]
+    },
+    {
+      "id": "u",
+      "symbol": "u",
+      "description": "单位产品生产变动成本（元/件）",
+      "sets": ["T"],
+      "entries": [
+        {"indices": ["T1"], "value": 10},
+        {"indices": ["T2"], "value": 12},
+        {"indices": ["T3"], "value": 15},
+        {"indices": ["T4"], "value": 11}
+      ]
+    },
+    {
+      "id": "h",
+      "symbol": "h",
+      "description": "期末单位库存持有成本（元/件）",
+      "sets": ["T"],
+      "entries": [
+        {"indices": ["T1"], "value": 2},
+        {"indices": ["T2"], "value": 2},
+        {"indices": ["T3"], "value": 2},
+        {"indices": ["T4"], "value": 2}
+      ]
+    },
+    {
+      "id": "M",
+      "symbol": "M",
+      "description": "单周期最大产能上限（件）",
+      "sets": ["T"],
+      "entries": [
+        {"indices": ["T1"], "value": 100},
+        {"indices": ["T2"], "value": 100},
+        {"indices": ["T3"], "value": 80},
+        {"indices": ["T4"], "value": 100}
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": "x",
+      "symbol": "x",
+      "description": "第 t 期的生产数量（件）",
+      "sets": ["T"],
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null
+    },
+    {
+      "id": "inv",
+      "symbol": "inv",
+      "description": "第 t 期末的结余库存量（件）",
+      "sets": ["T"],
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null
+    },
+    {
+      "id": "z",
+      "symbol": "z",
+      "description": "第 t 期是否开机生产（1=开机，0=停机）",
+      "sets": ["T"],
+      "domain": "binary",
+      "lower": 0,
+      "upper": 1
+    }
+  ],
+  "objective": {
+    "id": "total_cost",
+    "description": "最小化开机固定费、生产变动成本与库存持有成本之和",
+    "sense": "min",
+    "expr": {
+      "kind": "sum",
+      "index": "t",
+      "set": "T",
+      "body": {
+        "kind": "add",
+        "args": [
+          {
+            "kind": "mul",
+            "left": {"kind": "param", "id": "K", "indices": [{"kind": "index", "name": "t"}]},
+            "right": {"kind": "var", "id": "z", "indices": [{"kind": "index", "name": "t"}]}
+          },
+          {
+            "kind": "mul",
+            "left": {"kind": "param", "id": "u", "indices": [{"kind": "index", "name": "t"}]},
+            "right": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "t"}]}
+          },
+          {
+            "kind": "mul",
+            "left": {"kind": "param", "id": "h", "indices": [{"kind": "index", "name": "t"}]},
+            "right": {"kind": "var", "id": "inv", "indices": [{"kind": "index", "name": "t"}]}
+          }
+        ]
+      }
+    }
+  },
+  "constraints": [
+    {
+      "id": "capacity_setup",
+      "description": "开机后才能生产且不超过当期产能上限",
+      "for_each": [{"index": "t", "set": "T"}],
+      "lhs": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "t"}]},
+      "sense": "le",
+      "rhs": {
+        "kind": "mul",
+        "left": {"kind": "param", "id": "M", "indices": [{"kind": "index", "name": "t"}]},
+        "right": {"kind": "var", "id": "z", "indices": [{"kind": "index", "name": "t"}]}
+      }
+    },
+    {
+      "id": "balance_t1",
+      "description": "第 1 期物料平衡（无期初库存）：产量 - 期末库存 = 需求",
+      "for_each": [],
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {"kind": "var", "id": "x", "indices": [{"kind": "literal", "value": "T1"}]},
+          {"kind": "neg", "arg": {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T1"}]}}
+        ]
+      },
+      "sense": "eq",
+      "rhs": {"kind": "param", "id": "d", "indices": [{"kind": "literal", "value": "T1"}]}
+    },
+    {
+      "id": "balance_t2",
+      "description": "第 2 期库存结转平衡：上期库存 + 本期产量 - 本期库存 = 本期需求",
+      "for_each": [],
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T1"}]},
+          {"kind": "var", "id": "x", "indices": [{"kind": "literal", "value": "T2"}]},
+          {"kind": "neg", "arg": {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T2"}]}}
+        ]
+      },
+      "sense": "eq",
+      "rhs": {"kind": "param", "id": "d", "indices": [{"kind": "literal", "value": "T2"}]}
+    },
+    {
+      "id": "balance_t3",
+      "description": "第 3 期库存结转平衡：上期库存 + 本期产量 - 本期库存 = 本期需求",
+      "for_each": [],
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T2"}]},
+          {"kind": "var", "id": "x", "indices": [{"kind": "literal", "value": "T3"}]},
+          {"kind": "neg", "arg": {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T3"}]}}
+        ]
+      },
+      "sense": "eq",
+      "rhs": {"kind": "param", "id": "d", "indices": [{"kind": "literal", "value": "T3"}]}
+    },
+    {
+      "id": "balance_t4",
+      "description": "第 4 期库存结转平衡：上期库存 + 本期产量 - 本期库存 = 本期需求",
+      "for_each": [],
+      "lhs": {
+        "kind": "add",
+        "args": [
+          {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T3"}]},
+          {"kind": "var", "id": "x", "indices": [{"kind": "literal", "value": "T4"}]},
+          {"kind": "neg", "arg": {"kind": "var", "id": "inv", "indices": [{"kind": "literal", "value": "T4"}]}}
+        ]
+      },
+      "sense": "eq",
+      "rhs": {"kind": "param", "id": "d", "indices": [{"kind": "literal", "value": "T4"}]}
+    }
+  ]
+}

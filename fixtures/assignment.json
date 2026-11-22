@@ -1,0 +1,155 @@
+{
+  "sets": [
+    {
+      "id": "I",
+      "members": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "J",
+      "members": [
+        "P",
+        "Q",
+        "R"
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "id": "cost",
+      "sets": [
+        "I",
+        "J"
+      ],
+      "data_key": "cost"
+    }
+  ],
+  "variables": [
+    {
+      "id": "x",
+      "domain": "binary",
+      "lower": 0,
+      "upper": 1,
+      "sets": [
+        "I",
+        "J"
+      ]
+    }
+  ],
+  "objective": {
+    "id": "obj",
+    "sense": "min",
+    "expr": {
+      "kind": "sum",
+      "index": "i",
+      "set": "I",
+      "body": {
+        "kind": "sum",
+        "index": "j",
+        "set": "J",
+        "body": {
+          "kind": "mul",
+          "left": {
+            "kind": "param",
+            "id": "cost",
+            "indices": [
+              {
+                "kind": "index",
+                "name": "i"
+              },
+              {
+                "kind": "index",
+                "name": "j"
+              }
+            ]
+          },
+          "right": {
+            "kind": "var",
+            "id": "x",
+            "indices": [
+              {
+                "kind": "index",
+                "name": "i"
+              },
+              {
+                "kind": "index",
+                "name": "j"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "constraints": [
+    {
+      "id": "one_job",
+      "lhs": {
+        "kind": "sum",
+        "index": "j",
+        "set": "J",
+        "body": {
+          "kind": "var",
+          "id": "x",
+          "indices": [
+            {
+              "kind": "index",
+              "name": "i"
+            },
+            {
+              "kind": "index",
+              "name": "j"
+            }
+          ]
+        }
+      },
+      "sense": "eq",
+      "rhs": {
+        "kind": "number",
+        "value": 1
+      },
+      "for_each": [
+        {
+          "index": "i",
+          "set": "I"
+        }
+      ]
+    },
+    {
+      "id": "one_worker",
+      "lhs": {
+        "kind": "sum",
+        "index": "i",
+        "set": "I",
+        "body": {
+          "kind": "var",
+          "id": "x",
+          "indices": [
+            {
+              "kind": "index",
+              "name": "i"
+            },
+            {
+              "kind": "index",
+              "name": "j"
+            }
+          ]
+        }
+      },
+      "sense": "eq",
+      "rhs": {
+        "kind": "number",
+        "value": 1
+      },
+      "for_each": [
+        {
+          "index": "j",
+          "set": "J"
+        }
+      ]
+    }
+  ]
+}

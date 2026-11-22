@@ -1,0 +1,67 @@
+{
+  "cost": [
+    {
+      "indices": [
+        "A",
+        "P"
+      ],
+      "value": 9
+    },
+    {
+      "indices": [
+        "A",
+        "Q"
+      ],
+      "value": 2
+    },
+    {
+      "indices": [
+        "A",
+        "R"
+      ],
+      "value": 7
+    },
+    {
+      "indices": [
+        "B",
+        "P"
+      ],
+      "value": 6
+    },
+    {
+      "indices": [
+        "B",
+        "Q"
+      ],
+      "value": 4
+    },
+    {
+      "indices": [
+        "B",
+        "R"
+      ],
+      "value": 3
+    },
+    {
+      "indices": [
+        "C",
+        "P"
+      ],
+      "value": 5
+    },
+    {
+      "indices": [
+        "C",
+        "Q"
+      ],
+      "value": 8
+    },
+    {
+      "indices": [
+        "C",
+        "R"
+      ],
+      "value": 1
+    }
+  ]
+}

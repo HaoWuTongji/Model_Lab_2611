@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "sets": [
+    {
+      "id": "I",
+      "members": ["Crude1", "Crude2", "Crude3"],
+      "description": "可选原料油种类"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "p",
+      "symbol": "p",
+      "description": "各原料油采购单价（元/吨）",
+      "sets": ["I"],
+      "entries": [
+        {"indices": ["Crude1"], "value": 4200},
+        {"indices": ["Crude2"], "value": 3600},
+        {"indices": ["Crude3"], "value": 3100}
+      ]
+    },
+    {
+      "id": "oct",
+      "symbol": "oct",
+      "description": "各原料油辛烷值指标",
+      "sets": ["I"],
+      "entries": [
+        {"indices": ["Crude1"], "value": 96},
+        {"indices": ["Crude2"], "value": 90},
+        {"indices": ["Crude3"], "value": 84}
+      ]
+    },
+    {
+      "id": "sul",
+      "symbol": "sul",
+      "description": "各原料油含硫量百分比（%）",
+      "sets": ["I"],
+      "entries": [
+        {"indices": ["Crude1"], "value": 0.6},
+        {"indices": ["Crude2"], "value": 1.4},
+        {"indices": ["Crude3"], "value": 2.3}
+      ]
+    },
+    {
+      "id": "sup",
+      "symbol": "sup",
+      "description": "各原料油最大可采购量（吨）",
+      "sets": ["I"],
+      "entries": [
+        {"indices": ["Crude1"], "value": 500},
+        {"indices": ["Crude2"], "value": 600},
+        {"indices": ["Crude3"], "value": 500}
+      ]
+    },
+    {
+      "id": "target_vol",
+      "symbol": "Q",
+      "description": "成品油总混合产量要求（吨）",
+      "sets": [],
+      "value": 1000
+    }
+  ],
+  "variables": [
+    {
+      "id": "x",
+      "symbol": "x",
+      "description": "各原料油的采购与投入混合量（吨）",
+      "sets": ["I"],
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null
+    }
+  ],
+  "objective": {
+    "id": "total_cost",
+    "description": "最小化原料油总采购成本",
+    "sense": "min",
+    "expr": {
+      "kind": "sum",
+      "index": "i",
+      "set": "I",
+      "body": {
+        "kind": "mul",
+        "left": {"kind": "param", "id": "p", "indices": [{"kind": "index", "name": "i"}]},
+        "right": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "i"}]}
+      }
+    }
+  },
+  "constraints": [
+    {
+      "id": "supply_cap",
+      "description": "每种原料投入量不超过最大供应量",
+      "for_each": [{"index": "i", "set": "I"}],
+      "lhs": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "i"}]},
+      "sense": "le",
+      "rhs": {"kind": "param", "id": "sup", "indices": [{"kind": "index", "name": "i"}]}
+    },
+    {
+      "id": "total_demand",
+      "description": "混合总产量必须达到 1000 吨",
+      "for_each": [],
+      "lhs": {
+        "kind": "sum",
+        "index": "i",
+        "set": "I",
+        "body": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "i"}]}
+      },
+      "sense": "eq",
+      "rhs": {"kind": "param", "id": "target_vol", "indices": []}
+    },
+    {
+      "id": "min_octane",
+      "description": "加权平均辛烷值不低于 90（线性化表达）",
+      "for_each": [],
+      "lhs": {
+        "kind": "sum",
+        "index": "i",
+        "set": "I",
+        "body": {
+          "kind": "mul",
+          "left": {"kind": "param", "id": "oct", "indices": [{"kind": "index", "name": "i"}]},
+          "right": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "i"}]}
+        }
+      },
+      "sense": "ge",
+      "rhs": {
+        "kind": "mul",
+        "left": {"kind": "number", "value": 90},
+        "right": {"kind": "param", "id": "target_vol", "indices": []}
+      }
+    },
+    {
+      "id": "max_sulfur",
+      "description": "加权平均含硫量不超过 1.5%（线性化表达）",
+      "for_each": [],
+      "lhs": {
+        "kind": "sum",
+        "index": "i",
+        "set": "I",
+        "body": {
+          "kind": "mul",
+          "left": {"kind": "param", "id": "sul", "indices": [{"kind": "index", "name": "i"}]},
+          "right": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "i"}]}
+        }
+      },
+      "sense": "le",
+      "rhs": {
+        "kind": "mul",
+        "left": {"kind": "number", "value": 1.5},
+        "right": {"kind": "param", "id": "target_vol", "indices": []}
+      }
+    }
+  ]
+}

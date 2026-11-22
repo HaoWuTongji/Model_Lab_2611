@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "sets": [
+    {
+      "id": "S",
+      "members": ["Mon_Fri", "Tue_Sat", "Wed_Sun", "Thu_Mon", "Fri_Tue", "Sat_Wed", "Sun_Thu"],
+      "description": "连续工作5天休2天的7种轮班模式"
+    },
+    {
+      "id": "D",
+      "members": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      "description": "一周7天集合"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "req",
+      "symbol": "req",
+      "description": "每日最低在岗员工人数要求",
+      "sets": ["D"],
+      "entries": [
+        {"indices": ["Mon"], "value": 14},
+        {"indices": ["Tue"], "value": 13},
+        {"indices": ["Wed"], "value": 15},
+        {"indices": ["Thu"], "value": 16},
+        {"indices": ["Fri"], "value": 19},
+        {"indices": ["Sat"], "value": 18},
+        {"indices": ["Sun"], "value": 11}
+      ]
+    },
+    {
+      "id": "pay",
+      "symbol": "pay",
+      "description": "各班次每位员工的周薪成本（元）",
+      "sets": ["S"],
+      "entries": [
+        {"indices": ["Mon_Fri"], "value": 2000},
+        {"indices": ["Tue_Sat"], "value": 2100},
+        {"indices": ["Wed_Sun"], "value": 2200},
+        {"indices": ["Thu_Mon"], "value": 2200},
+        {"indices": ["Fri_Tue"], "value": 2200},
+        {"indices": ["Sat_Wed"], "value": 2200},
+        {"indices": ["Sun_Thu"], "value": 2100}
+      ]
+    },
+    {
+      "id": "avail",
+      "symbol": "a",
+      "description": "0-1 覆盖矩阵：班次 s 在第 d 天是否在岗",
+      "sets": ["S", "D"],
+      "default": 0,
+      "entries": [
+        {"indices": ["Mon_Fri", "Mon"], "value": 1}, {"indices": ["Mon_Fri", "Tue"], "value": 1}, {"indices": ["Mon_Fri", "Wed"], "value": 1}, {"indices": ["Mon_Fri", "Thu"], "value": 1}, {"indices": ["Mon_Fri", "Fri"], "value": 1},
+        {"indices": ["Tue_Sat", "Tue"], "value": 1}, {"indices": ["Tue_Sat", "Wed"], "value": 1}, {"indices": ["Tue_Sat", "Thu"], "value": 1}, {"indices": ["Tue_Sat", "Fri"], "value": 1}, {"indices": ["Tue_Sat", "Sat"], "value": 1},
+        {"indices": ["Wed_Sun", "Wed"], "value": 1}, {"indices": ["Wed_Sun", "Thu"], "value": 1}, {"indices": ["Wed_Sun", "Fri"], "value": 1}, {"indices": ["Wed_Sun", "Sat"], "value": 1}, {"indices": ["Wed_Sun", "Sun"], "value": 1},
+        {"indices": ["Thu_Mon", "Thu"], "value": 1}, {"indices": ["Thu_Mon", "Fri"], "value": 1}, {"indices": ["Thu_Mon", "Sat"], "value": 1}, {"indices": ["Thu_Mon", "Sun"], "value": 1}, {"indices": ["Thu_Mon", "Mon"], "value": 1},
+        {"indices": ["Fri_Tue", "Fri"], "value": 1}, {"indices": ["Fri_Tue", "Sat"], "value": 1}, {"indices": ["Fri_Tue", "Sun"], "value": 1}, {"indices": ["Fri_Tue", "Mon"], "value": 1}, {"indices": ["Fri_Tue", "Tue"], "value": 1},
+        {"indices": ["Sat_Wed", "Sat"], "value": 1}, {"indices": ["Sat_Wed", "Sun"], "value": 1}, {"indices": ["Sat_Wed", "Mon"], "value": 1}, {"indices": ["Sat_Wed", "Tue"], "value": 1}, {"indices": ["Sat_Wed", "Wed"], "value": 1},
+        {"indices": ["Sun_Thu", "Sun"], "value": 1}, {"indices": ["Sun_Thu", "Mon"], "value": 1}, {"indices": ["Sun_Thu", "Tue"], "value": 1}, {"indices": ["Sun_Thu", "Wed"], "value": 1}, {"indices": ["Sun_Thu", "Thu"], "value": 1}
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": "n",
+      "symbol": "n",
+      "description": "安排在班次 s 上的员工人数",
+      "sets": ["S"],
+      "domain": "integer",
+      "lower": 0,
+      "upper": null
+    }
+  ],
+  "objective": {
+    "id": "total_wage",
+    "description": "最小化每周总人力薪酬支出",
+    "sense": "min",
+    "expr": {
+      "kind": "sum",
+      "index": "s",
+      "set": "S",
+      "body": {
+        "kind": "mul",
+        "left": {"kind": "param", "id": "pay", "indices": [{"kind": "index", "name": "s"}]},
+        "right": {"kind": "var", "id": "n", "indices": [{"kind": "index", "name": "s"}]}
+      }
+    }
+  },
+  "constraints": [
+    {
+      "id": "daily_coverage",
+      "description": "每天在岗总人数不得低于当日需求",
+      "for_each": [{"index": "d", "set": "D"}],
+      "lhs": {
+        "kind": "sum",
+        "index": "s",
+        "set": "S",
+        "body": {
+          "kind": "mul",
+          "left": {"kind": "param", "id": "avail", "indices": [{"kind": "index", "name": "s"}, {"kind": "index", "name": "d"}]},
+          "right": {"kind": "var", "id": "n", "indices": [{"kind": "index", "name": "s"}]}
+        }
+      },
+      "sense": "ge",
+      "rhs": {"kind": "param", "id": "req", "indices": [{"kind": "index", "name": "d"}]}
+    }
+  ]
+}

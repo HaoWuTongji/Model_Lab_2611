@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS schema_version(version INTEGER PRIMARY KEY);
+INSERT OR IGNORE INTO schema_version VALUES (1);
+CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('teacher','student')), created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id), csrf TEXT NOT NULL, expires REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS login_attempts(address TEXT NOT NULL, created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS courses(id TEXT PRIMARY KEY, teacher_id TEXT REFERENCES users(id), title TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS enrollments(course_id TEXT REFERENCES courses(id), user_id TEXT REFERENCES users(id), PRIMARY KEY(course_id,user_id));
+CREATE TABLE IF NOT EXISTS assignments(id TEXT PRIMARY KEY, course_id TEXT REFERENCES courses(id), title TEXT NOT NULL, problem_text TEXT NOT NULL, data_json TEXT NOT NULL, hints TEXT NOT NULL, deadline TEXT, diagnostics INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS submissions(id TEXT PRIMARY KEY, owner_id TEXT REFERENCES users(id), assignment_id TEXT REFERENCES assignments(id), title TEXT NOT NULL, current_revision TEXT, version INTEGER NOT NULL DEFAULT 0, created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS revisions(id TEXT PRIMARY KEY, submission_id TEXT REFERENCES submissions(id), number INTEGER NOT NULL, parent_id TEXT, problem_text TEXT NOT NULL, model_json TEXT NOT NULL, data_json TEXT NOT NULL, assets_json TEXT NOT NULL, source TEXT NOT NULL, created REAL NOT NULL, UNIQUE(submission_id, number));
+CREATE TABLE IF NOT EXISTS confirmations(revision_id TEXT PRIMARY KEY REFERENCES revisions(id), hash TEXT NOT NULL, actor TEXT REFERENCES users(id), created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS assets(id TEXT PRIMARY KEY, submission_id TEXT REFERENCES submissions(id), name TEXT NOT NULL, mime TEXT NOT NULL, sha256 TEXT NOT NULL, size INTEGER NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, revision_id TEXT REFERENCES revisions(id), actor TEXT REFERENCES users(id), kind TEXT NOT NULL, state TEXT NOT NULL, request_key TEXT NOT NULL, confirmation_hash TEXT, payload TEXT NOT NULL, result TEXT, error TEXT, cancel INTEGER NOT NULL DEFAULT 0, created REAL NOT NULL, started REAL, finished REAL, heartbeat REAL, UNIQUE(actor,kind,request_key));
+CREATE TABLE IF NOT EXISTS audit(id TEXT PRIMARY KEY, submission_id TEXT REFERENCES submissions(id), actor TEXT REFERENCES users(id), event TEXT NOT NULL, payload TEXT NOT NULL, created REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS runtime(key TEXT PRIMARY KEY, value TEXT NOT NULL, updated REAL NOT NULL);
+CREATE INDEX IF NOT EXISTS jobs_queue ON jobs(state,created);
+CREATE INDEX IF NOT EXISTS revisions_submission ON revisions(submission_id,number);

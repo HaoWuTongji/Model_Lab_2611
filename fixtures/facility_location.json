@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "sets": [
+    {
+      "id": "W",
+      "members": ["W1", "W2", "W3"],
+      "description": "候选仓库集合"
+    },
+    {
+      "id": "C",
+      "members": ["C1", "C2", "C3", "C4"],
+      "description": "客户需求点集合"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "f",
+      "symbol": "f",
+      "description": "仓库建设固定成本（万元）",
+      "sets": ["W"],
+      "entries": [
+        {"indices": ["W1"], "value": 120},
+        {"indices": ["W2"], "value": 150},
+        {"indices": ["W3"], "value": 100}
+      ]
+    },
+    {
+      "id": "cap",
+      "symbol": "cap",
+      "description": "仓库最大供应能力（吨）",
+      "sets": ["W"],
+      "entries": [
+        {"indices": ["W1"], "value": 80},
+        {"indices": ["W2"], "value": 100},
+        {"indices": ["W3"], "value": 70}
+      ]
+    },
+    {
+      "id": "d",
+      "symbol": "d",
+      "description": "各客户需求量（吨）",
+      "sets": ["C"],
+      "entries": [
+        {"indices": ["C1"], "value": 35},
+        {"indices": ["C2"], "value": 40},
+        {"indices": ["C3"], "value": 30},
+        {"indices": ["C4"], "value": 45}
+      ]
+    },
+    {
+      "id": "c",
+      "symbol": "c",
+      "description": "单位货物运输成本（万元/吨）",
+      "sets": ["W", "C"],
+      "entries": [
+        {"indices": ["W1", "C1"], "value": 2.0},
+        {"indices": ["W1", "C2"], "value": 3.5},
+        {"indices": ["W1", "C3"], "value": 4.0},
+        {"indices": ["W1", "C4"], "value": 5.0},
+        {"indices": ["W2", "C1"], "value": 3.0},
+        {"indices": ["W2", "C2"], "value": 1.8},
+        {"indices": ["W2", "C3"], "value": 2.5},
+        {"indices": ["W2", "C4"], "value": 3.2},
+        {"indices": ["W3", "C1"], "value": 4.2},
+        {"indices": ["W3", "C2"], "value": 2.9},
+        {"indices": ["W3", "C3"], "value": 1.5},
+        {"indices": ["W3", "C4"], "value": 2.2}
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": "y",
+      "symbol": "y",
+      "description": "是否建设并启用仓库 w（1=建，0=不建）",
+      "sets": ["W"],
+      "domain": "binary",
+      "lower": 0,
+      "upper": 1
+    },
+    {
+      "id": "x",
+      "symbol": "x",
+      "description": "从仓库 w 运往客户 c 的货物量（吨）",
+      "sets": ["W", "C"],
+      "domain": "continuous",
+      "lower": 0,
+      "upper": null
+    }
+  ],
+  "objective": {
+    "id": "total_cost",
+    "description": "最小化仓库建设固定成本与总运输成本之和",
+    "sense": "min",
+    "expr": {
+      "kind": "add",
+      "args": [
+        {
+          "kind": "sum",
+          "index": "w",
+          "set": "W",
+          "body": {
+            "kind": "mul",
+            "left": {"kind": "param", "id": "f", "indices": [{"kind": "index", "name": "w"}]},
+            "right": {"kind": "var", "id": "y", "indices": [{"kind": "index", "name": "w"}]}
+          }
+        },
+        {
+          "kind": "sum",
+          "index": "w",
+          "set": "W",
+          "body": {
+            "kind": "sum",
+            "index": "k",
+            "set": "C",
+            "body": {
+              "kind": "mul",
+              "left": {"kind": "param", "id": "c", "indices": [{"kind": "index", "name": "w"}, {"kind": "index", "name": "k"}]},
+              "right": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "w"}, {"kind": "index", "name": "k"}]}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "constraints": [
+    {
+      "id": "demand_satisfaction",
+      "description": "每个客户收到的总运量必须满足其需求",
+      "for_each": [{"index": "k", "set": "C"}],
+      "lhs": {
+        "kind": "sum",
+        "index": "w",
+        "set": "W",
+        "body": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "w"}, {"kind": "index", "name": "k"}]}
+      },
+      "sense": "ge",
+      "rhs": {"kind": "param", "id": "d", "indices": [{"kind": "index", "name": "k"}]}
+    },
+    {
+      "id": "warehouse_capacity",
+      "description": "仓库仅在启用后才能发货且总发货量不超过容量上限",
+      "for_each": [{"index": "w", "set": "W"}],
+      "lhs": {
+        "kind": "sum",
+        "index": "k",
+        "set": "C",
+        "body": {"kind": "var", "id": "x", "indices": [{"kind": "index", "name": "w"}, {"kind": "index", "name": "k"}]}
+      },
+      "sense": "le",
+      "rhs": {
+        "kind": "mul",
+        "left": {"kind": "param", "id": "cap", "indices": [{"kind": "index", "name": "w"}]},
+        "right": {"kind": "var", "id": "y", "indices": [{"kind": "index", "name": "w"}]}
+      }
+    }
+  ]
+}
