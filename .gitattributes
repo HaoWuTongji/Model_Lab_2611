@@ -1,0 +1,2 @@
+# Keep cmd.exe scripts in CRLF form in checkouts and source ZIP archives.
+*.bat -text

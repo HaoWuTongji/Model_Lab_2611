@@ -1,7 +1,7 @@
 """Trusted local bootstrap; executes only the dispatcher's generated template.
 
-stdin is a lifetime pipe owned by the dispatcher. EOF means the dispatcher died;
-kill our entire private process group so a worker crash cannot leave a solver.
+stdin is a lifetime pipe owned by the dispatcher. When it closes, terminate
+the solver (and its private process group on POSIX).
 This is process separation, not a container/security sandbox.
 """
 
@@ -15,6 +15,11 @@ import threading
 if os.name != "nt":
     import resource
 else:
+    import ctypes
+    import msvcrt
+    import time
+    from ctypes import wintypes
+
     resource = None
 
 
@@ -27,12 +32,22 @@ def main():
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     def monitor_parent():
+        if os.name == "nt":
+            # A blocking stdin read can stall native solver imports on Windows.
+            # The dispatcher never writes data. Poll until its write end closes.
+            peek = ctypes.windll.kernel32.PeekNamedPipe
+            peek.argtypes = (
+                wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD,
+                wintypes.LPDWORD, wintypes.LPDWORD, wintypes.LPDWORD,
+            )
+            peek.restype = wintypes.BOOL
+            handle = msvcrt.get_osfhandle(0)
+            while peek(handle, None, 0, None, None, None):
+                time.sleep(0.1)
+            os._exit(1)
         while os.read(0, 1):
             pass
-        if os.name == "nt":
-            os._exit(1)
-        else:
-            os.killpg(os.getpgrp(), signal.SIGKILL)
+        os.killpg(os.getpgrp(), signal.SIGKILL)
 
     threading.Thread(target=monitor_parent, daemon=True).start()
     sys.argv = [script, result]

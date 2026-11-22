@@ -34,9 +34,11 @@ def is_port_in_use(host: str, port: int) -> bool:
         return s.connect_ex((host, port)) == 0
 
 
-def wait_until_ready(url: str, timeout: float = 15.0) -> bool:
+def wait_until_ready(url: str, processes: list[subprocess.Popen], timeout: float = 15.0) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        if any(p.poll() is not None for p in processes):
+            return False
         try:
             with urllib.request.urlopen(f"{url}/api/health", timeout=1.0) as resp:
                 if resp.status == 200:
@@ -49,7 +51,7 @@ def wait_until_ready(url: str, timeout: float = 15.0) -> bool:
 def main() -> None:
     os.chdir(ROOT)
     if not (ROOT / "frontend" / "dist" / "index.html").exists():
-        raise SystemExit("未找到前端构建产物，请先在项目目录执行: make build")
+        raise SystemExit("缺少 frontend/dist/index.html，请重新完整解压 ModelLab 安装包。")
 
     if is_port_in_use(HOST, PORT):
         try:
@@ -109,15 +111,18 @@ def main() -> None:
             )
         )
 
-        if wait_until_ready(URL):
+        if wait_until_ready(URL, processes):
             print(f"ModelLab 已就绪: {URL}", flush=True)
             print("在 Spyder 中点击停止按钮（或按 Ctrl+C）即可关闭服务。", flush=True)
             webbrowser.open(URL)
-        else:
+        elif all(p.poll() is None for p in processes):
             print(f"服务启动中，请稍候访问: {URL}", flush=True)
 
         while all(p.poll() is None for p in processes):
             time.sleep(0.5)
+        for p in processes:
+            if p.returncode:
+                raise SystemExit(p.returncode)
     except KeyboardInterrupt:
         print("\n正在关闭 ModelLab...", flush=True)
     finally:
